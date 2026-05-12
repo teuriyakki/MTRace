@@ -1,0 +1,1485 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Math Tower Race 🏰🔥</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+
+<!-- ══════════════════════════════════════════
+  ⚙️  KONFIGURASI FIREBASE — GANTI BAGIAN INI
+     Ikuti panduan di bawah file ini
+════════════════════════════════════════════ -->
+<script>
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyCT-ZRVeNvYeKzUUbDPlp8VpKrqYycrOuU",
+  authDomain: "mltower.firebaseapp.com",
+  databaseURL: "https://mltower-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "mltower",
+  storageBucket: "mltower.firebasestorage.app",
+  messagingSenderId: "1078604707737",
+  appId: "1:1078604707737:web:b871f9be08a328b6da8508"
+};
+</script>
+
+<style>
+/* ════════════════════ BASE ════════════════════ */
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+:root{
+  --bg:#0b0717;
+  --surface:rgba(255,255,255,.06);
+  --border:rgba(255,255,255,.09);
+  --gold:#FFD700;
+  --orange:#FF6B00;
+  --fire:#FF3300;
+  --green:#22c55e;
+  --red:#ef4444;
+  --blue:#38bdf8;
+  --muted:#7777aa;
+  --text:#fff;
+}
+html,body{height:100%;overflow:hidden;}
+body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column;align-items:center;}
+
+/* ── screens ── */
+.screen{
+  display:none;width:100%;max-width:480px;height:100%;
+  flex-direction:column;align-items:center;
+  position:absolute;top:0;left:50%;transform:translateX(-50%);
+  overflow-y:auto;overflow-x:hidden;z-index:10;
+}
+.screen.active{display:flex;}
+.screen::-webkit-scrollbar{width:0;}
+
+/* stars bg */
+.stars-bg{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;}
+.star{position:absolute;border-radius:50%;background:#fff;animation:twk linear infinite;}
+@keyframes twk{0%,100%{opacity:.25;transform:scale(1);}50%{opacity:.9;transform:scale(1.4);}}
+
+/* lava floor line */
+body::after{
+  content:'';position:fixed;bottom:0;left:0;right:0;height:5px;
+  background:linear-gradient(90deg,#ff6600,#ff2200,#ff8800,#ff2200,#ff6600);
+  background-size:200% 100%;animation:lavaflow 2s linear infinite;z-index:0;
+}
+@keyframes lavaflow{from{background-position:0%}to{background-position:200%}}
+
+/* floating embers */
+.ember{position:fixed;border-radius:50%;pointer-events:none;z-index:0;animation:embrise linear infinite;}
+@keyframes embrise{0%{transform:translateY(0) scale(1);opacity:.8;}100%{transform:translateY(-100vh) scale(0);opacity:0;}}
+
+/* ════ SHARED CARD/BUTTON COMPONENTS ════ */
+.glass{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:18px;padding:1.1rem 1rem;width:100%;
+  position:relative;overflow:hidden;
+}
+.glass::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--orange),var(--gold),var(--orange),transparent);
+}
+.section-lbl{
+  font-family:'Fredoka One',cursive;font-size:.72rem;
+  color:#FF9966;letter-spacing:2.5px;text-transform:uppercase;
+  text-align:center;margin-bottom:.8rem;
+}
+
+.name-input,.code-input{
+  width:100%;padding:.7rem 1rem;border-radius:12px;
+  border:1.5px solid var(--border);background:rgba(255,255,255,.06);
+  color:#fff;font-family:'Nunito',sans-serif;font-size:1rem;font-weight:800;
+  outline:none;text-align:center;letter-spacing:2px;transition:border-color .2s;
+}
+.name-input{letter-spacing:1px;}
+.name-input:focus,.code-input:focus{border-color:var(--gold);}
+.name-input::placeholder,.code-input::placeholder{color:#444;font-weight:400;letter-spacing:0;}
+
+.avatar-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:5px;margin-bottom:.2rem;}
+.av{
+  aspect-ratio:1;border-radius:10px;border:2px solid transparent;
+  background:rgba(255,255,255,.05);cursor:pointer;font-size:1.3rem;
+  display:flex;align-items:center;justify-content:center;transition:all .15s;
+}
+.av:hover{transform:scale(1.1);}
+.av.sel{border-color:var(--gold);background:rgba(255,215,0,.15);box-shadow:0 0 10px rgba(255,215,0,.3);}
+
+/* diff buttons */
+.diff-grid{display:grid;grid-template-columns:1fr 1fr;gap:.4rem;}
+.d-btn{
+  padding:.6rem .3rem;border-radius:12px;border:1.5px solid var(--border);
+  background:rgba(255,255,255,.04);color:var(--muted);
+  font-family:'Nunito',sans-serif;font-size:.78rem;font-weight:900;
+  cursor:pointer;transition:all .15s;text-align:center;
+}
+.d-btn[data-d="0"].sel{border-color:var(--gold);background:rgba(255,215,0,.1);color:var(--gold);}
+.d-btn[data-d="1"].sel{border-color:var(--green);background:rgba(34,197,94,.1);color:var(--green);}
+.d-btn[data-d="2"].sel{border-color:#fbbf24;background:rgba(251,191,36,.1);color:#fbbf24;}
+.d-btn[data-d="3"].sel{border-color:var(--red);background:rgba(239,68,68,.1);color:var(--red);}
+.d-btn:hover{border-color:rgba(255,255,255,.2);}
+
+/* fire button */
+.btn-fire{
+  font-family:'Fredoka One',cursive;font-size:1.1rem;
+  width:100%;padding:.82rem;border:none;border-radius:50px;
+  background:linear-gradient(135deg,#FF6600,#FF2200);color:#fff;cursor:pointer;
+  box-shadow:0 5px 0 #991100,0 8px 24px rgba(255,60,0,.4);
+  transition:all .18s;display:flex;align-items:center;justify-content:center;gap:.5rem;
+  flex-shrink:0;
+}
+.btn-fire:hover{transform:translateY(-2px);box-shadow:0 7px 0 #991100,0 12px 28px rgba(255,60,0,.5);}
+.btn-fire:active{transform:translateY(1px);box-shadow:0 2px 0 #991100;}
+.btn-fire:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+
+.btn-outline{
+  font-family:'Fredoka One',cursive;font-size:.95rem;
+  width:100%;padding:.75rem;border-radius:50px;
+  border:1.5px solid var(--border);background:rgba(255,255,255,.05);
+  color:#fff;cursor:pointer;transition:all .18s;text-align:center;flex-shrink:0;
+}
+.btn-outline:hover{border-color:rgba(255,255,255,.25);background:rgba(255,255,255,.1);}
+
+/* logo */
+.logo-icon{font-size:2.8rem;display:block;text-align:center;animation:castlefloat 3s ease-in-out infinite;}
+@keyframes castlefloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-8px);}}
+.logo-title{
+  font-family:'Fredoka One',cursive;font-size:2.4rem;
+  background:linear-gradient(180deg,#FFD700,#FF8C00);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  line-height:1;text-align:center;
+}
+.logo-sub{font-size:.75rem;color:#FF9966;letter-spacing:2px;text-align:center;text-transform:uppercase;}
+
+/* chips */
+.chips{display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.55rem;}
+.chip{
+  display:inline-flex;align-items:center;gap:.28rem;
+  background:rgba(255,255,255,.05);border:1px solid var(--border);
+  border-radius:30px;padding:.18rem .62rem;font-size:.67rem;color:var(--muted);
+}
+.chip strong{color:#fff;}
+
+/* ════ INTRO ════ */
+#introScreen{
+  background:radial-gradient(ellipse at 50% -5%,#3d1000 0%,#0b0717 60%);
+  padding:1.3rem 1rem 1.5rem;gap:.9rem;justify-content:flex-start;z-index:10;
+}
+
+/* mode selector tabs */
+.mode-tabs{display:flex;gap:.4rem;width:100%;}
+.mode-tab{
+  flex:1;padding:.65rem;border-radius:12px;border:1.5px solid var(--border);
+  background:rgba(255,255,255,.04);color:var(--muted);
+  font-family:'Fredoka One',cursive;font-size:.85rem;cursor:pointer;
+  transition:all .15s;text-align:center;
+}
+.mode-tab.sel{border-color:var(--gold);background:rgba(255,215,0,.1);color:var(--gold);}
+
+/* room section */
+.room-section{display:flex;flex-direction:column;gap:.5rem;width:100%;}
+
+/* room code display */
+.room-code-box{
+  background:rgba(255,215,0,.08);border:1.5px solid rgba(255,215,0,.25);
+  border-radius:14px;padding:.85rem;text-align:center;
+}
+.room-code-lbl{font-size:.65rem;color:#cca800;letter-spacing:2px;text-transform:uppercase;margin-bottom:.3rem;}
+.room-code-val{
+  font-family:'Fredoka One',cursive;font-size:2.5rem;color:var(--gold);
+  letter-spacing:8px;text-shadow:0 0 20px rgba(255,215,0,.4);
+}
+.copy-btn{
+  font-size:.65rem;color:var(--muted);background:transparent;border:none;
+  cursor:pointer;margin-top:.3rem;font-family:'Nunito',sans-serif;
+  text-decoration:underline;
+}
+.copy-btn:hover{color:#fff;}
+
+/* ════ LOBBY ════ */
+#lobbyScreen{
+  background:radial-gradient(ellipse at 50% -5%,#3d1000 0%,#0b0717 60%);
+  padding:1.3rem 1rem 1.5rem;gap:.85rem;align-items:center;z-index:10;
+}
+.lobby-room{
+  background:rgba(255,215,0,.07);border:1px solid rgba(255,215,0,.2);
+  border-radius:12px;padding:.5rem 1rem;text-align:center;width:100%;
+}
+.lobby-room-lbl{font-size:.65rem;color:#cca800;letter-spacing:2px;}
+.lobby-room-code{font-family:'Fredoka One',cursive;font-size:1.6rem;color:var(--gold);letter-spacing:6px;}
+
+.players-list{
+  width:100%;display:flex;flex-direction:column;gap:.4rem;
+  max-height:200px;overflow-y:auto;
+}
+.player-row{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:12px;padding:.55rem .8rem;
+  display:flex;align-items:center;gap:.6rem;
+}
+.player-row.me{border-color:rgba(255,215,0,.3);}
+.pr-av{font-size:1.3rem;}
+.pr-name{font-weight:800;font-size:.85rem;flex:1;}
+.pr-host{font-size:.6rem;color:var(--gold);background:rgba(255,215,0,.1);border:1px solid rgba(255,215,0,.2);border-radius:20px;padding:.1rem .45rem;}
+.pr-ready{font-size:.6rem;color:var(--green);background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.2);border-radius:20px;padding:.1rem .45rem;}
+.pr-wait{font-size:.6rem;color:var(--muted);}
+
+.lobby-status{font-size:.8rem;color:var(--muted);text-align:center;}
+.lobby-status strong{color:#fff;}
+
+/* waiting dots */
+.dots::after{content:'';animation:dotdot 1.5s infinite;}
+@keyframes dotdot{0%{content:'.';}33%{content:'..';}66%{content:'...';}100%{content:'';}}
+
+/* ════ COUNTDOWN ════ */
+#countScreen{
+  justify-content:center;align-items:center;gap:.8rem;
+  background:radial-gradient(ellipse at 50% 0%,#3d1000 0%,#0b0717 65%);z-index:10;
+}
+.count-n{
+  font-family:'Fredoka One',cursive;font-size:9rem;color:var(--gold);
+  text-shadow:0 0 80px rgba(255,215,0,.6);animation:cpop .55s ease;line-height:1;
+}
+@keyframes cpop{from{transform:scale(2);opacity:0;}to{transform:scale(1);opacity:1;}}
+.count-lbl{font-size:.85rem;color:#FF9966;letter-spacing:3px;text-transform:uppercase;}
+
+/* ════ GAME SCREEN ════ */
+#gameScreen{flex-direction:column;background:var(--bg);padding:0;z-index:10;max-width:480px;}
+
+/* HUD */
+.hud{
+  width:100%;display:flex;align-items:center;gap:.45rem;
+  padding:.45rem .7rem;
+  background:rgba(0,0,0,.65);border-bottom:2px solid rgba(255,80,0,.35);
+  flex-shrink:0;overflow:hidden;
+}
+.hud-av{font-size:1.3rem;flex-shrink:0;}
+.hud-info{flex:1;min-width:0;}
+.hud-name{font-weight:900;font-size:.7rem;color:var(--gold);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.hud-pts{font-family:'Fredoka One',cursive;font-size:.72rem;color:#FF9966;}
+.hud-mid{
+  font-family:'Fredoka One',cursive;font-size:.68rem;color:#fff;
+  background:rgba(255,60,0,.3);border:1px solid rgba(255,100,0,.3);
+  padding:.18rem .55rem;border-radius:20px;text-align:center;white-space:nowrap;flex-shrink:0;
+}
+.hud-qn{font-size:.56rem;opacity:.7;}
+
+/* game main */
+.game-main{flex:1;display:flex;width:100%;overflow:hidden;position:relative;}
+
+/* ── LEADERBOARD STRIP (right side during game) ── */
+.lb-strip{
+  width:72px;flex-shrink:0;
+  background:rgba(0,0,0,.4);
+  border-left:1px solid rgba(255,80,0,.2);
+  display:flex;flex-direction:column;
+  overflow:hidden;
+}
+.lb-title{
+  font-family:'Fredoka One',cursive;font-size:.55rem;
+  color:#FF9966;letter-spacing:1.5px;text-transform:uppercase;
+  text-align:center;padding:.3rem 0;
+  border-bottom:1px solid rgba(255,80,0,.2);
+  flex-shrink:0;
+}
+.lb-list{flex:1;overflow-y:auto;padding:.2rem 0;}
+.lb-list::-webkit-scrollbar{width:0;}
+.lb-entry{
+  display:flex;align-items:center;gap:3px;
+  padding:.25rem .35rem;font-size:.6rem;
+  border-bottom:1px solid rgba(255,255,255,.03);
+  transition:background .2s;
+}
+.lb-entry.me-entry{background:rgba(255,215,0,.08);}
+.lb-rank{
+  font-family:'Fredoka One',cursive;font-size:.58rem;
+  color:var(--muted);width:12px;flex-shrink:0;text-align:center;
+}
+.lb-av{font-size:.8rem;}
+.lb-info{flex:1;min-width:0;}
+.lb-nm{font-weight:800;font-size:.55rem;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.lb-sc{font-family:'Fredoka One',cursive;font-size:.55rem;color:var(--gold);}
+.lb-tower{
+  font-size:.5rem;color:var(--muted);display:flex;align-items:center;gap:1px;
+}
+
+/* ── TOWER COLUMN ── */
+.tower-col{
+  width:68px;flex-shrink:0;display:flex;flex-direction:column;
+  position:relative;overflow:hidden;
+  background:linear-gradient(180deg,#0b0717 0%,#130920 60%,#160820 100%);
+  border-right:1px solid rgba(255,80,0,.18);
+}
+.tower-sky{flex:1;position:relative;overflow:hidden;}
+.tower-shaft{
+  width:44px;position:absolute;bottom:0;left:50%;transform:translateX(-50%);
+  display:flex;flex-direction:column-reverse;gap:1px;
+}
+.t-block{width:100%;height:12px;border-radius:2px;border:1px solid rgba(0,0,0,.3);flex-shrink:0;}
+.player-sprite{
+  position:absolute;left:50%;transform:translateX(-50%);
+  font-size:1.4rem;transition:bottom .5s cubic-bezier(.25,.46,.45,.94);z-index:5;
+  filter:drop-shadow(0 0 8px rgba(255,215,0,.8));pointer-events:none;
+}
+.tower-col.danger .player-sprite{filter:drop-shadow(0 0 14px rgba(255,50,0,1));}
+
+/* lava layer */
+.lava-layer{position:absolute;bottom:0;left:0;right:0;transition:height .6s cubic-bezier(.25,.46,.45,.94);z-index:4;}
+.lava-glow{position:absolute;top:-18px;left:0;right:0;height:18px;background:radial-gradient(ellipse at 50% 100%,rgba(255,100,0,.5),transparent 70%);}
+.lava-top{height:11px;background:linear-gradient(180deg,#FF8800,#FF3300);position:relative;overflow:hidden;}
+.lava-top::before{
+  content:'';position:absolute;inset:0;
+  background:repeating-linear-gradient(90deg,rgba(255,255,255,.15) 0,transparent 8px,rgba(255,255,255,.15) 16px);
+  animation:lavamove 1.2s linear infinite;
+}
+@keyframes lavamove{from{background-position:0 0;}to{background-position:32px 0;}}
+.lava-body{background:linear-gradient(180deg,#CC2200,#991100);}
+
+/* ── QUESTION COLUMN ── */
+.q-col{
+  flex:1;display:flex;flex-direction:column;
+  padding:.65rem .7rem 1rem;overflow-y:auto;gap:.6rem;
+}
+.q-col::-webkit-scrollbar{width:0;}
+
+.lvl-badge{
+  display:inline-flex;align-items:center;gap:.3rem;
+  padding:.18rem .6rem;border-radius:30px;
+  font-size:.65rem;font-weight:900;align-self:flex-start;
+}
+.lv1{background:rgba(34,197,94,.14);color:var(--green);border:1px solid rgba(34,197,94,.28);}
+.lv2{background:rgba(251,191,36,.14);color:#fbbf24;border:1px solid rgba(251,191,36,.28);}
+.lv3{background:rgba(239,68,68,.14);color:var(--red);border:1px solid rgba(239,68,68,.28);}
+
+.q-text{font-family:'Fredoka One',cursive;font-size:1.3rem;color:#fff;line-height:1.35;}
+
+.opts-grid{display:grid;grid-template-columns:1fr 1fr;gap:.4rem;}
+.opt{
+  padding:.6rem .4rem;border-radius:12px;border:1.5px solid var(--border);
+  background:rgba(255,255,255,.05);color:#fff;cursor:pointer;
+  font-family:'Nunito',sans-serif;font-size:.85rem;font-weight:800;
+  transition:all .13s;display:flex;align-items:center;gap:.38rem;line-height:1.25;
+}
+.opt:hover:not(:disabled){border-color:rgba(255,215,0,.4);background:rgba(255,215,0,.07);transform:translateY(-1px);}
+.opt:disabled{cursor:default;}
+.opt-l{
+  width:22px;height:22px;border-radius:6px;background:rgba(255,255,255,.1);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Fredoka One',cursive;font-size:.62rem;flex-shrink:0;transition:background .15s;
+}
+.opt.c-ok{border-color:var(--green)!important;background:rgba(34,197,94,.15)!important;animation:abounce .3s ease;}
+.opt.c-ok .opt-l{background:var(--green);color:#000;}
+.opt.c-no{border-color:var(--red)!important;background:rgba(239,68,68,.13)!important;animation:ashake .35s ease;}
+.opt.c-no .opt-l{background:var(--red);}
+.opt.c-reveal{border-color:var(--green)!important;background:rgba(34,197,94,.08)!important;}
+.opt.c-reveal .opt-l{background:var(--green);color:#000;}
+@keyframes abounce{0%{transform:scale(1);}50%{transform:scale(1.05);}100%{transform:scale(1);}}
+@keyframes ashake{0%,100%{transform:translateX(0);}25%{transform:translateX(-6px);}75%{transform:translateX(6px);}}
+
+.feedback{text-align:center;font-family:'Fredoka One',cursive;font-size:.82rem;min-height:1.3rem;}
+.fb-ok{color:var(--gold);}
+.fb-no{color:var(--red);}
+
+.btn-next{
+  font-family:'Fredoka One',cursive;font-size:.9rem;
+  padding:.6rem;border:none;border-radius:12px;
+  background:linear-gradient(135deg,#FF6600,#FF2200);color:#fff;cursor:pointer;
+  box-shadow:0 3px 0 #991100;transition:all .14s;display:none;flex-shrink:0;
+}
+.btn-next:hover{transform:translateY(-1px);box-shadow:0 4px 0 #991100;}
+
+/* speed indicator */
+.speed-tip{
+  background:rgba(255,215,0,.07);border:1px solid rgba(255,215,0,.13);
+  border-radius:10px;padding:.3rem .6rem;font-size:.62rem;color:#cca800;line-height:1.5;
+}
+.speed-tip strong{color:var(--gold);}
+
+/* waiting overlay (non-host waiting to start) */
+.wait-overlay{
+  position:absolute;inset:0;z-index:50;
+  background:rgba(11,7,23,.85);backdrop-filter:blur(4px);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.8rem;
+}
+.wait-overlay.hidden{display:none;}
+.wait-icon{font-size:3rem;animation:castlefloat 2s ease-in-out infinite;}
+.wait-msg{font-family:'Fredoka One',cursive;font-size:1.1rem;color:var(--gold);text-align:center;}
+.wait-sub{font-size:.78rem;color:var(--muted);text-align:center;}
+
+/* toast */
+.toast{
+  position:fixed;top:50%;left:50%;
+  transform:translate(-50%,-50%) scale(0);
+  background:rgba(6,3,18,.97);border-radius:18px;
+  padding:.9rem 1.5rem;text-align:center;z-index:200;
+  border:2px solid transparent;pointer-events:none;
+  transition:transform .2s cubic-bezier(.25,.46,.45,.94);min-width:150px;max-width:250px;
+}
+.toast.show{transform:translate(-50%,-50%) scale(1);}
+.toast.tw{border-color:var(--gold);box-shadow:0 0 35px rgba(255,215,0,.28);}
+.toast.tl{border-color:var(--red);}
+.t-em{font-size:1.9rem;}
+.t-tx{font-family:'Fredoka One',cursive;font-size:.9rem;color:var(--gold);margin-top:.18rem;}
+
+/* ════ RESULT ════ */
+#resultScreen{
+  background:radial-gradient(ellipse at 50% -5%,#0a2f10 0%,#0b0717 55%);
+  padding:1.3rem 1rem 2rem;gap:.9rem;align-items:center;z-index:10;
+}
+.res-ico{font-size:2.6rem;text-align:center;}
+.res-title{font-family:'Fredoka One',cursive;font-size:1.75rem;color:var(--gold);text-align:center;}
+.res-sub{font-size:.75rem;color:#FF9966;text-align:center;}
+
+.score-big{font-family:'Fredoka One',cursive;font-size:4rem;color:var(--gold);text-align:center;text-shadow:0 0 45px rgba(255,215,0,.5);line-height:1;}
+.score-lbl{font-size:.68rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase;text-align:center;}
+
+/* final leaderboard */
+.final-lb{width:100%;max-width:440px;display:flex;flex-direction:column;gap:.35rem;}
+.flb-title{font-family:'Fredoka One',cursive;font-size:.72rem;letter-spacing:2px;text-transform:uppercase;color:#FF9966;margin-bottom:.3rem;}
+.flb-row{
+  display:flex;align-items:center;gap:.55rem;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:12px;padding:.55rem .75rem;
+}
+.flb-row.me-row{border-color:rgba(255,215,0,.3);background:rgba(255,215,0,.06);}
+.flb-pos{
+  font-family:'Fredoka One',cursive;font-size:1.1rem;
+  width:28px;text-align:center;flex-shrink:0;
+}
+.flb-av{font-size:1.2rem;}
+.flb-info{flex:1;}
+.flb-name{font-weight:800;font-size:.82rem;}
+.flb-stats{font-size:.65rem;color:var(--muted);margin-top:.1rem;}
+.flb-score{font-family:'Fredoka One',cursive;font-size:.95rem;color:var(--gold);}
+
+/* pct bar */
+.pct-bar{width:100%;max-width:440px;height:10px;background:rgba(255,255,255,.06);border-radius:30px;overflow:hidden;border:1px solid var(--border);}
+.pct-fill{height:100%;border-radius:30px;background:linear-gradient(90deg,var(--green),var(--gold),var(--fire));transition:width 1.1s ease;}
+
+.stats-row{display:flex;gap:.5rem;width:100%;max-width:440px;}
+.sbox{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:13px;padding:.65rem .4rem;text-align:center;}
+.sv{font-family:'Fredoka One',cursive;font-size:1.3rem;}
+.sl{font-size:.58rem;color:var(--muted);margin-top:.1rem;letter-spacing:.5px;}
+
+/* review */
+.rev-wrap{width:100%;max-width:440px;}
+.rev-hd{font-family:'Fredoka One',cursive;font-size:.68rem;letter-spacing:2px;text-transform:uppercase;color:#FF9966;margin-bottom:.5rem;}
+.rev-list{display:flex;flex-direction:column;gap:.3rem;max-height:250px;overflow-y:auto;padding-right:3px;}
+.rev-list::-webkit-scrollbar{width:3px;}
+.rev-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:6px;}
+.rev-item{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.55rem .7rem;display:flex;gap:.5rem;align-items:flex-start;}
+.ri-w{border-color:rgba(239,68,68,.28);background:rgba(239,68,68,.06);}
+.ri-ok{border-color:rgba(34,197,94,.18);background:rgba(34,197,94,.04);}
+.rev-n{width:20px;height:20px;border-radius:5px;background:rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;font-family:'Fredoka One',cursive;font-size:.55rem;flex-shrink:0;margin-top:1px;}
+.ri-w .rev-n{background:var(--red);}
+.ri-ok .rev-n{background:rgba(34,197,94,.3);color:var(--green);}
+.rev-q{font-size:.72rem;font-weight:800;line-height:1.3;}
+.rev-a{font-size:.65rem;color:var(--muted);margin-top:.15rem;line-height:1.3;}
+.rev-a strong{color:var(--green);}
+.rev-a .ma{color:var(--red);}
+.rev-p{font-family:'Fredoka One',cursive;font-size:.62rem;color:var(--gold);margin-left:auto;white-space:nowrap;flex-shrink:0;}
+
+.btn-row{display:flex;gap:.45rem;width:100%;max-width:440px;flex-wrap:wrap;}
+.btn-g{
+  flex:1;padding:.72rem 1rem;border-radius:12px;
+  border:1.5px solid rgba(34,197,94,.3);background:rgba(34,197,94,.09);
+  color:var(--green);font-family:'Fredoka One',cursive;font-size:.85rem;
+  cursor:pointer;transition:all .18s;text-align:center;
+}
+.btn-g:hover{background:rgba(34,197,94,.18);}
+.btn-fs{
+  flex:1;padding:.72rem 1rem;border-radius:12px;border:none;
+  background:linear-gradient(135deg,#FF6600,#FF2200);color:#fff;
+  font-family:'Fredoka One',cursive;font-size:.85rem;cursor:pointer;
+  box-shadow:0 3px 0 #991100;transition:all .18s;
+}
+.btn-fs:hover{transform:translateY(-1px);}
+
+.notice{background:rgba(255,215,0,.07);border:1px solid rgba(255,215,0,.18);border-radius:12px;padding:.6rem .8rem;font-size:.68rem;color:#cca800;line-height:1.6;width:100%;max-width:440px;}
+.notice strong{color:var(--gold);}
+
+/* error msg */
+.err-msg{font-size:.72rem;color:var(--red);text-align:center;min-height:.9rem;}
+
+/* Firebase offline notice */
+.fb-error{
+  background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);
+  border-radius:12px;padding:.65rem .85rem;font-size:.72rem;color:#fca5a5;
+  line-height:1.6;width:100%;max-width:440px;display:none;
+}
+
+/* confetti */
+.cf{position:fixed;border-radius:2px;pointer-events:none;z-index:300;animation:cfall linear forwards;}
+@keyframes cfall{0%{transform:translateY(-20px) rotate(0);opacity:1;}100%{transform:translateY(110vh) rotate(720deg);opacity:0;}}
+
+/* tower block colors */
+:root{
+  --bc0:#8B4513;--bc1:#9C5220;--bc2:#B06030;--bc3:#C07030;
+  --bc4:#CD7F32;--bc5:#D4943A;--bc6:#DAA520;--bc7:#EDB84B;
+  --bc8:#F5C842;--bc9:#FFD700;--bc10:#FFE040;--bc11:#FFF080;
+}
+</style>
+</head>
+<body>
+
+<div class="stars-bg" id="starsBg"></div>
+
+<!-- ════════════════════ INTRO ════════════════════ -->
+<div id="introScreen" class="screen active">
+  <span class="logo-icon">🏰🔥</span>
+  <div class="logo-title">MATH TOWER RACE</div>
+  <div class="logo-sub">Multiplayer · Quantitative Reasoning</div>
+
+  <!-- Firebase error notice -->
+  <div class="fb-error" id="fbError">
+    ⚠️ <strong>Firebase belum dikonfigurasi.</strong> Buka file HTML ini di text editor, cari bagian <code>FIREBASE_CONFIG</code> di awal file, dan ganti dengan config project Firebase kamu. Lihat panduan di file PDF yang disertakan.
+  </div>
+
+  <!-- Profile -->
+  <div class="glass">
+    <div class="section-lbl">👤 Profil Kamu</div>
+    <input class="name-input" id="nameInput" placeholder="Nama kamu..." maxlength="20">
+    <div style="height:.55rem;"></div>
+    <div class="avatar-grid" id="avGrid"></div>
+  </div>
+
+  <!-- Mode: Buat Room / Gabung Room -->
+  <div class="glass">
+    <div class="section-lbl">🎮 Mode Permainan</div>
+    <div class="mode-tabs">
+      <div class="mode-tab sel" id="tabCreate" onclick="selectMode('create')">✨ Buat Room</div>
+      <div class="mode-tab" id="tabJoin" onclick="selectMode('join')">🔗 Gabung Room</div>
+    </div>
+
+    <!-- CREATE ROOM panel -->
+    <div id="panelCreate" class="room-section" style="margin-top:.75rem;">
+      <div class="section-lbl" style="margin-bottom:.4rem;">⚙️ Level Soal</div>
+      <div class="diff-grid">
+        <button class="d-btn" data-d="0">🎯 Semua Level</button>
+        <button class="d-btn" data-d="1">🟢 Easy</button>
+        <button class="d-btn" data-d="2">🟡 Medium</button>
+        <button class="d-btn" data-d="3">🔴 Hard</button>
+      </div>
+      <div class="chips">
+        <div class="chip">📝 <strong id="chipQ">45</strong> soal</div>
+        <div class="chip">⚡ Cepat = Poin Tinggi</div>
+        <div class="chip">🏰 Tower naik tiap jawaban benar</div>
+      </div>
+      <div class="err-msg" id="errCreate"></div>
+      <button class="btn-fire" id="btnCreate" onclick="createRoom()">✨ Buat Room Baru</button>
+    </div>
+
+    <!-- JOIN ROOM panel -->
+    <div id="panelJoin" class="room-section" style="margin-top:.75rem;display:none;">
+      <input class="code-input" id="codeInput" placeholder="KODE ROOM (4 HURUF)" maxlength="4" oninput="this.value=this.value.toUpperCase()">
+      <div class="err-msg" id="errJoin"></div>
+      <button class="btn-fire" id="btnJoin" onclick="joinRoom()">🔗 Gabung Room</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════ LOBBY ════════════════════ -->
+<div id="lobbyScreen" class="screen">
+  <span class="logo-icon" style="font-size:2rem;">🏰</span>
+  <div class="logo-title" style="font-size:1.8rem;">Ruang Tunggu</div>
+
+  <div class="lobby-room glass" style="padding:.6rem 1rem;text-align:center;max-width:440px;width:100%;">
+    <div class="lobby-room-lbl">Kode Room — bagikan ke teman</div>
+    <div class="lobby-room-code" id="lobbyCode">----</div>
+    <button class="copy-btn" onclick="copyCode()">📋 Salin kode</button>
+  </div>
+
+  <div class="glass" style="max-width:440px;width:100%;">
+    <div class="section-lbl">👥 Pemain <span id="playerCount">(0)</span></div>
+    <div class="players-list" id="playersList"></div>
+  </div>
+
+  <div class="lobby-status" id="lobbyStatus">
+    Menunggu pemain lain<span class="dots"></span>
+  </div>
+
+  <!-- only host sees start btn -->
+  <button class="btn-fire" id="btnStartGame" onclick="hostStartGame()" style="display:none;max-width:440px;width:100%;">
+    🔥 Mulai Game!
+  </button>
+  <button class="btn-outline" onclick="leaveRoom()" style="max-width:440px;width:100%;">← Keluar Room</button>
+</div>
+
+<!-- ════════════════════ COUNTDOWN ════════════════════ -->
+<div id="countScreen" class="screen">
+  <div class="count-n" id="countN">3</div>
+  <div class="count-lbl">Siapkan Dirimu!</div>
+</div>
+
+<!-- ════════════════════ GAME ════════════════════ -->
+<div id="gameScreen" class="screen">
+
+  <div class="hud">
+    <div class="hud-av" id="hudAv">🧙‍♂️</div>
+    <div class="hud-info">
+      <div class="hud-name" id="hudName">Pemain</div>
+      <div class="hud-pts">⚡ <span id="hudPts">0</span> poin</div>
+    </div>
+    <div class="hud-mid" id="hudMid">Easy<br><span class="hud-qn">1/15</span></div>
+  </div>
+
+  <div class="game-main">
+
+    <!-- Tower column -->
+    <div class="tower-col" id="towerCol">
+      <div class="tower-sky" id="towerSky">
+        <div class="tower-shaft" id="towerShaft"></div>
+        <div class="player-sprite" id="playerSprite">🧙‍♂️</div>
+      </div>
+      <div class="lava-layer" id="lavaLayer" style="height:0px;">
+        <div class="lava-glow"></div>
+        <div class="lava-top"></div>
+        <div class="lava-body" id="lavaBody"></div>
+      </div>
+    </div>
+
+    <!-- Question column -->
+    <div class="q-col" id="qCol">
+      <div class="lvl-badge" id="lvlBadge">🟢 Easy</div>
+      <div class="speed-tip">⚡ <strong>Lebih cepat = poin lebih tinggi.</strong> Tidak ada batas waktu, tapi skor makin kecil makin lama kamu menjawab.</div>
+      <div class="q-text" id="qText">Memuat soal...</div>
+      <div class="opts-grid" id="optsGrid"></div>
+      <div class="feedback" id="feedback"></div>
+      <button class="btn-next" id="btnNext" onclick="nextQuestion()">Soal Berikutnya →</button>
+    </div>
+
+    <!-- Live leaderboard strip -->
+    <div class="lb-strip">
+      <div class="lb-title">Live</div>
+      <div class="lb-list" id="lbList"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ════════════════════ RESULT ════════════════════ -->
+<div id="resultScreen" class="screen">
+  <div class="res-ico" id="resIco">🏆</div>
+  <div class="res-title" id="resTitle">Selesai!</div>
+  <div class="res-sub" id="resSub"></div>
+
+  <div class="score-big" id="resFinal">0</div>
+  <div class="score-lbl">Skor Kamu</div>
+
+  <div class="pct-bar"><div class="pct-fill" id="pctFill" style="width:0%"></div></div>
+
+  <div class="stats-row">
+    <div class="sbox"><div class="sv" id="stOk" style="color:var(--green)">0</div><div class="sl">✅ Benar</div></div>
+    <div class="sbox"><div class="sv" id="stNo" style="color:var(--red)">0</div><div class="sl">❌ Salah</div></div>
+    <div class="sbox"><div class="sv" id="stAvg" style="color:#fbbf24">-</div><div class="sl">⚡ Rata-rata</div></div>
+  </div>
+
+  <!-- Final leaderboard -->
+  <div class="final-lb" id="finalLb">
+    <div class="flb-title">🏆 Papan Peringkat Akhir</div>
+    <!-- populated by JS -->
+  </div>
+
+  <div class="notice">
+    💾 <strong>Export Excel</strong> menggabungkan hasil <strong>semua pemain</strong> dalam satu file.
+  </div>
+
+  <div class="rev-wrap">
+    <div class="rev-hd">📋 Review Jawaban Kamu</div>
+    <div class="rev-list" id="revList"></div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn-g" onclick="exportExcel()">📊 Export Excel</button>
+    <button class="btn-fs" onclick="goIntro()">🔄 Main Lagi</button>
+  </div>
+  <div style="height:1rem;flex-shrink:0;"></div>
+</div>
+
+<!-- toast -->
+<div class="toast" id="toast"><div class="t-em" id="tEm"></div><div class="t-tx" id="tTx"></div></div>
+
+<!-- ═══════════════════════════════════════════════
+     FIREBASE SDK
+═══════════════════════════════════════════════ -->
+<script type="module">
+import { initializeApp }              from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, set, get, update, onValue, push, remove, serverTimestamp }
+                                      from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+/* ═══════════════════════════════════
+   SOAL — 15 per level (sesuai PDF)
+═══════════════════════════════════ */
+const Q = {
+  1:[
+    {q:'1.245 + 538 = …',    o:['1.773','1.783','1.793','1.873'],     a:1},
+    {q:'3.720 − 864 = …',    o:['2.756','2.856','2.956','3.056'],     a:1},
+    {q:'48 × 125 = …',       o:['5.980','5.990','6.000','6.010'],     a:2},
+    {q:'7.488 ÷ 8 = …',      o:['916','926','936','946'],             a:2},
+    {q:'2.650 + 1.475 = …',  o:['4.025','4.115','4.125','4.225'],     a:2},
+    {q:'5.300 − 1.847 = …',  o:['3.343','3.353','3.443','3.453'],     a:3},
+    {q:'36 × 250 = …',       o:['8.980','9.000','9.120','9.200'],     a:1},
+    {q:'9.360 ÷ 12 = …',     o:['760','770','780','790'],             a:2},
+    {q:'4.825 + 2.398 = …',  o:['7.113','7.123','7.213','7.223'],     a:3},
+    {q:'6.000 − 2.347 = …',  o:['3.553','3.643','3.653','3.753'],     a:2},
+    {q:'75 × 480 = …',       o:['35.990','36.000','36.110','36.120'], a:1},
+    {q:'8.640 ÷ 24 = …',     o:['340','350','360','370'],             a:2},
+    {q:'3.456 + 4.789 = …',  o:['8.135','8.145','8.235','8.245'],     a:3},
+    {q:'9.100 − 3.675 = …',  o:['5.325','5.335','5.415','5.425'],     a:3},
+    {q:'124 × 75 = …',       o:['9.290','9.300','9.310','9.320'],     a:1},
+  ],
+  2:[
+    {q:'56 × 8 − 78 = …',    o:['370','390','360','270'],   a:0},
+    {q:'(45 − 9) × 7 = …',   o:['232','252','272','292'],   a:1},
+    {q:'240 − 9 × 18 = …',   o:['78','98','68','88'],       a:0},
+    {q:'(72 − 8) × 5 = …',   o:['280','300','320','340'],   a:2},
+    {q:'38 × 9 − 56 = …',    o:['266','256','286','276'],   a:2},
+    {q:'(80 − 14) × 6 = …',  o:['336','356','376','396'],   a:3},
+    {q:'63 × 7 − 95 = …',    o:['346','356','366','376'],   a:0},
+    {q:'500 − 6 × 45 = …',   o:['190','210','230','250'],   a:2},
+    {q:'(93 − 17) × 4 = …',  o:['294','304','314','324'],   a:0},
+    {q:'47 × 8 − 112 = …',   o:['204','224','244','264'],   a:3},
+    {q:'(65 − 11) × 7 = …',  o:['278','358','378','388'],   a:2},
+    {q:'85 × 6 − 96 = …',    o:['414','434','454','474'],   a:0},
+    {q:'78 − 22 × 9 = …',    o:['110','−110','−120','120'], a:3},
+    {q:'32 × 7 − 48 = …',    o:['156','176','196','216'],   a:1},
+    {q:'400 − 5 × 54 = …',   o:['110','130','120','140'],   a:1},
+  ],
+  3:[
+    {q:'1,5 × 240 + 3 × 80 = …',   o:['360','540','570','600'], a:3},
+    {q:'0,25 × 400 + 12 × 15 = …', o:['100','280','250','260'], a:1},
+    {q:'3/4 × 360 + 5 × 27 = …',   o:['405','270','375','420'], a:0},
+    {q:'2,5 × 80 + 6 × 45 = …',    o:['200','440','470','450'], a:2},
+    {q:'1/3 × 270 + 8 × 35 = …',   o:['90','350','390','370'],  a:3},
+    {q:'4 × 125 + 0,5 × 360 = …',  o:['680','500','650','710'], a:0},
+    {q:'1,5 × 160 + 9 × 20 = …',   o:['240','390','420','450'], a:2},
+    {q:'0,75 × 480 + 7 × 30 = …',  o:['360','570','540','600'], a:1},
+    {q:'2/5 × 350 + 4 × 65 = …',   o:['140','370','420','400'], a:3},
+    {q:'3 × 180 + 1,25 × 240 = …', o:['740','840','940','810'], a:1},
+    {q:'1/4 × 480 + 6 × 55 = …',   o:['430','440','450','460'], a:2},
+    {q:'0,5 × 560 + 7 × 40 = …',   o:['280','520','600','560'], a:3},
+    {q:'2,5 × 120 + 5 × 54 = …',   o:['300','540','570','600'], a:2},
+    {q:'3/5 × 450 + 9 × 25 = …',   o:['495','270','465','520'], a:0},
+    {q:'1,5 × 320 + 4 × 75 = …',   o:['480','740','780','810'], a:2},
+  ]
+};
+
+const BLOCK_COLS = [
+  '#8B4513','#9C5220','#B06030','#C07030','#CD7F32',
+  '#D4943A','#DAA520','#EDB84B','#F5C842','#FFD700',
+  '#FFE040','#FFF080','#fff',
+];
+const CHARS = ['🧙‍♂️','🦸','🧝','🤖','🦊','🐲','👸','🧌','🦅','🐯','🦋','🧜'];
+const LVL_N = {1:'🟢 Easy',2:'🟡 Medium',3:'🔴 Hard'};
+const LVL_C = {1:'lv1',2:'lv2',3:'lv3'};
+const LAVA_RISE = 13;
+
+// Poin per level berdasarkan kecepatan (detik)
+function calcPts(level, elapsed) {
+  const t = [
+    [5,10,15,20,30,45,60],          // breakpoints
+    [120,100,80,65,50,35,20,10],    // lv1
+    [180,150,120,100,75,55,35,15],  // lv2
+    [250,200,160,130,100,75,50,25], // lv3
+  ];
+  const br = t[0], pts = t[level];
+  for (let i = 0; i < br.length; i++) if (elapsed < br[i]) return pts[i];
+  return pts[pts.length-1];
+}
+
+/* ═══════ STATE ═══════ */
+let myName='Pemain', myChar=0, diffMode=0;
+let myId=null, roomCode=null, isHost=false;
+let roomRef=null, playersRef=null, gameRef=null;
+let qList=[], qIdx=0, myScore=0, qStart=0;
+let answered=false, myAnswers=[];
+let towerBlocks=0, lavaHeightPx=0;
+let dbOnValueUnsubscribers=[];
+
+/* ═══════ FIREBASE INIT ═══════ */
+let db;
+try {
+  const app = initializeApp(FIREBASE_CONFIG);
+  db = getDatabase(app);
+  // test if config looks valid
+  if (FIREBASE_CONFIG.apiKey === 'GANTI_API_KEY') throw new Error('not configured');
+} catch(e) {
+  document.getElementById('fbError').style.display = 'block';
+  db = null;
+}
+
+function dbOff() {
+  dbOnValueUnsubscribers.forEach(u => u());
+  dbOnValueUnsubscribers = [];
+}
+function dbOn(refObj, cb) {
+  const unsub = onValue(refObj, cb);
+  dbOnValueUnsubscribers.push(unsub);
+  return unsub;
+}
+
+/* ═══════ INIT UI ═══════ */
+window.buildStars = () => {
+  const s = document.getElementById('starsBg');
+  for (let i = 0; i < 55; i++) {
+    const d = document.createElement('div'); d.className = 'star';
+    const sz = 1 + Math.random()*2;
+    d.style.cssText = `width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*70}%;animation-duration:${2+Math.random()*4}s;animation-delay:${Math.random()*4}s;`;
+    s.appendChild(d);
+  }
+};
+
+window.buildAvGrid = () => {
+  const g = document.getElementById('avGrid');
+  CHARS.forEach((c,i) => {
+    const d = document.createElement('div');
+    d.className = 'av' + (i===0?' sel':'');
+    d.textContent = c;
+    d.onclick = () => { g.querySelectorAll('.av').forEach(x=>x.classList.remove('sel')); d.classList.add('sel'); myChar=i; };
+    g.appendChild(d);
+  });
+};
+
+window.buildStars();
+window.buildAvGrid();
+
+// spawn embers
+(()=>{
+  const cols=['#FFD700','#FF6600','#FF4500','#FFA500'];
+  for(let i=0;i<14;i++){
+    const e=document.createElement('div');e.className='ember';
+    e.style.cssText=`left:${Math.random()*100}%;bottom:0;width:${3+Math.random()*4}px;height:${3+Math.random()*4}px;background:${cols[Math.floor(Math.random()*cols.length)]};animation-duration:${3+Math.random()*5}s;animation-delay:${Math.random()*5}s;`;
+    document.body.appendChild(e);
+  }
+})();
+
+// diff buttons
+document.querySelectorAll('.d-btn').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('.d-btn').forEach(x=>x.classList.remove('sel'));
+    b.classList.add('sel'); diffMode = +b.dataset.d;
+    document.getElementById('chipQ').textContent = diffMode===0?45:15;
+  });
+});
+document.querySelector('.d-btn[data-d="0"]').classList.add('sel');
+
+/* ═══════ SCREEN NAV ═══════ */
+function setScreen(id) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+window.setScreen = setScreen;
+
+/* ═══════ MODE TABS ═══════ */
+window.selectMode = (m) => {
+  document.getElementById('tabCreate').classList.toggle('sel', m==='create');
+  document.getElementById('tabJoin').classList.toggle('sel', m==='join');
+  document.getElementById('panelCreate').style.display = m==='create'?'flex':'none';
+  document.getElementById('panelJoin').style.display   = m==='join'?'flex':'none';
+};
+
+/* ═══════ ROOM UTILS ═══════ */
+function genCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = '';
+  for (let i = 0; i < 4; i++) code += chars[Math.floor(Math.random()*chars.length)];
+  return code;
+}
+
+function genPlayerId() {
+  return 'p_' + Date.now() + '_' + Math.random().toString(36).slice(2,7);
+}
+
+function validateName() {
+  const n = document.getElementById('nameInput').value.trim();
+  if (!n) { showErr('Masukkan nama kamu dulu!'); return null; }
+  return n;
+}
+
+function showErr(msg, id='errCreate') {
+  const el = document.getElementById(id);
+  if (el) el.textContent = msg;
+}
+
+window.copyCode = () => {
+  navigator.clipboard?.writeText(roomCode).then(()=>showToast('📋','Kode disalin!',true));
+};
+
+/* ═══════ CREATE ROOM ═══════ */
+window.createRoom = async () => {
+  if (!db) { showErr('Firebase belum dikonfigurasi!'); return; }
+  const name = validateName();
+  if (!name) return;
+  myName = name;
+
+  document.getElementById('btnCreate').disabled = true;
+  document.getElementById('errCreate').textContent = 'Membuat room...';
+
+  const code = genCode();
+  myId   = genPlayerId();
+  roomCode = code;
+  isHost = true;
+
+  const lvlLabel = {0:'Semua Level',1:'Easy',2:'Medium',3:'Hard'};
+
+  const roomData = {
+    code,
+    host: myId,
+    status: 'lobby',      // lobby | countdown | playing | finished
+    diffMode,
+    levelLabel: lvlLabel[diffMode],
+    createdAt: serverTimestamp(),
+    questionSeed: Math.floor(Math.random()*999999),
+  };
+
+  const playerData = {
+    id: myId, name: myName, char: CHARS[myChar],
+    score: 0, correct: 0, wrong: 0, blocks: 0,
+    qIdx: 0, finished: false,
+    joinedAt: serverTimestamp(),
+  };
+
+  roomRef    = ref(db, `rooms/${code}`);
+  playersRef = ref(db, `rooms/${code}/players`);
+  gameRef    = ref(db, `rooms/${code}/game`);
+
+  await set(roomRef, roomData);
+  await set(ref(db, `rooms/${code}/players/${myId}`), playerData);
+
+  goLobby();
+};
+
+/* ═══════ JOIN ROOM ═══════ */
+window.joinRoom = async () => {
+  if (!db) { showErr('Firebase belum dikonfigurasi!','errJoin'); return; }
+  const name = validateName();
+  if (!name) { document.getElementById('errJoin').textContent='Masukkan nama kamu!'; return; }
+  myName = name;
+
+  const code = document.getElementById('codeInput').value.trim().toUpperCase();
+  if (code.length !== 4) { document.getElementById('errJoin').textContent='Kode harus 4 huruf!'; return; }
+
+  document.getElementById('btnJoin').disabled = true;
+  document.getElementById('errJoin').textContent = 'Mencari room...';
+
+  const snap = await get(ref(db, `rooms/${code}`));
+  if (!snap.exists()) {
+    document.getElementById('errJoin').textContent = 'Room tidak ditemukan!';
+    document.getElementById('btnJoin').disabled = false; return;
+  }
+  const room = snap.val();
+  if (room.status !== 'lobby') {
+    document.getElementById('errJoin').textContent = 'Game sudah dimulai!';
+    document.getElementById('btnJoin').disabled = false; return;
+  }
+
+  myId     = genPlayerId();
+  roomCode = code;
+  isHost   = false;
+  diffMode = room.diffMode;
+
+  roomRef    = ref(db, `rooms/${code}`);
+  playersRef = ref(db, `rooms/${code}/players`);
+  gameRef    = ref(db, `rooms/${code}/game`);
+
+  await set(ref(db, `rooms/${code}/players/${myId}`), {
+    id: myId, name: myName, char: CHARS[myChar],
+    score: 0, correct: 0, wrong: 0, blocks: 0,
+    qIdx: 0, finished: false,
+    joinedAt: serverTimestamp(),
+  });
+
+  goLobby();
+};
+
+/* ═══════ LOBBY ═══════ */
+function goLobby() {
+  setScreen('lobbyScreen');
+  document.getElementById('lobbyCode').textContent = roomCode;
+  document.getElementById('btnStartGame').style.display = isHost ? 'flex' : 'none';
+
+  // listen to players
+  dbOff();
+  dbOn(playersRef, snap => {
+    const players = snap.val() || {};
+    renderPlayersList(players);
+  });
+
+  // listen to room status → when host starts
+  dbOn(roomRef, snap => {
+    const room = snap.val();
+    if (!room) { goIntroClean(); return; }
+    if (room.status === 'countdown') startCountdown(room);
+    if (room.status === 'playing')   startActualGame(room);
+  });
+}
+
+function renderPlayersList(players) {
+  const list = document.getElementById('playersList');
+  const arr = Object.values(players).sort((a,b) => (a.joinedAt||0)-(b.joinedAt||0));
+  document.getElementById('playerCount').textContent = `(${arr.length})`;
+  list.innerHTML = arr.map(p => `
+    <div class="player-row ${p.id===myId?'me':''}">
+      <span class="pr-av">${p.char}</span>
+      <span class="pr-name">${p.name}${p.id===myId?' (Kamu)':''}</span>
+      ${p.id===roomCode?`<span class="pr-host">Host</span>`:''}
+    </div>
+  `).join('');
+
+  // update lobby status
+  if (arr.length < 2) {
+    document.getElementById('lobbyStatus').innerHTML = 'Butuh minimal <strong>2 pemain</strong> untuk memulai<span class="dots"></span>';
+    if (isHost) document.getElementById('btnStartGame').disabled = true;
+  } else {
+    document.getElementById('lobbyStatus').innerHTML = `<strong>${arr.length} pemain</strong> siap bertanding!`;
+    if (isHost) document.getElementById('btnStartGame').disabled = false;
+  }
+}
+
+window.leaveRoom = async () => {
+  dbOff();
+  if (myId && roomCode) {
+    await remove(ref(db, `rooms/${roomCode}/players/${myId}`));
+  }
+  goIntroClean();
+};
+
+function goIntroClean() {
+  dbOff();
+  roomCode=null; myId=null; isHost=false;
+  roomRef=null; playersRef=null; gameRef=null;
+  document.getElementById('btnCreate').disabled = false;
+  document.getElementById('btnJoin').disabled = false;
+  document.getElementById('errCreate').textContent = '';
+  document.getElementById('errJoin').textContent = '';
+  document.getElementById('codeInput').value = '';
+  setScreen('introScreen');
+}
+window.goIntro = goIntroClean;
+
+/* ═══════ HOST START ═══════ */
+window.hostStartGame = async () => {
+  if (!isHost) return;
+  await update(roomRef, { status: 'countdown' });
+};
+
+/* ═══════ COUNTDOWN (all players) ═══════ */
+function startCountdown(room) {
+  setScreen('countScreen');
+  dbOff(); // will re-listen in startActualGame
+
+  // Re-listen for playing status
+  dbOn(roomRef, snap => {
+    const r = snap.val();
+    if (!r) return;
+    if (r.status === 'playing') startActualGame(r);
+  });
+
+  // Only host runs the countdown timer and sets status to 'playing'
+  if (isHost) {
+    let n = 3;
+    const el = document.getElementById('countN');
+    const tick = () => {
+      el.textContent = n;
+      el.style.animation='none';
+      requestAnimationFrame(()=>requestAnimationFrame(()=>{el.style.animation='cpop .55s ease';}));
+      if (n === 0) {
+        update(roomRef, { status: 'playing' });
+        return;
+      }
+      n--;
+      setTimeout(tick, 1000);
+    };
+    tick();
+  }
+}
+
+/* ═══════ START ACTUAL GAME ═══════ */
+function startActualGame(room) {
+  dbOff();
+  diffMode = room.diffMode;
+  qList = buildQList(room.questionSeed);
+  qIdx = 0; myScore = 0; myAnswers = [];
+  towerBlocks = 0; lavaHeightPx = 0;
+
+  setScreen('gameScreen');
+  document.getElementById('hudAv').textContent   = CHARS[myChar];
+  document.getElementById('playerSprite').textContent = CHARS[myChar];
+  document.getElementById('hudName').textContent = myName;
+  document.getElementById('towerShaft').innerHTML = '';
+  updateLavaVisual(0);
+  updatePlayerPos();
+
+  // Listen to all players for live leaderboard
+  dbOn(playersRef, snap => {
+    renderLiveLeaderboard(snap.val() || {});
+  });
+
+  // Listen if all players finished → end game
+  dbOn(playersRef, snap => {
+    const players = Object.values(snap.val() || {});
+    if (players.length > 0 && players.every(p => p.finished)) {
+      endGame(snap.val());
+    }
+  });
+
+  loadQ();
+}
+
+function buildQList(seed) {
+  // seeded shuffle so all players get same order
+  function seededShuffle(arr, s) {
+    let st = s;
+    function rand() { st = (st * 1664525 + 1013904223) & 0xffffffff; return (st >>> 0) / 0xffffffff; }
+    const a = [...arr];
+    for (let i = a.length-1; i > 0; i--) {
+      const j = Math.floor(rand() * (i+1));
+      [a[i],a[j]] = [a[j],a[i]];
+    }
+    return a;
+  }
+  if (diffMode === 0) {
+    return [
+      ...seededShuffle(Q[1], seed).map(q=>({...q,level:1})),
+      ...seededShuffle(Q[2], seed+1).map(q=>({...q,level:2})),
+      ...seededShuffle(Q[3], seed+2).map(q=>({...q,level:3})),
+    ];
+  }
+  return seededShuffle(Q[diffMode], seed).map(q=>({...q,level:diffMode}));
+}
+
+/* ═══════ QUESTION ═══════ */
+function loadQ() {
+  if (qIdx >= qList.length) { markFinished(); return; }
+  answered = false;
+
+  const q = qList[qIdx];
+  const total = qList.length;
+
+  document.getElementById('hudPts').textContent = myScore.toLocaleString();
+  document.getElementById('hudMid').innerHTML = `${LVL_N[q.level].split(' ')[1]}<br><span class="hud-qn">${qIdx+1}/${total}</span>`;
+
+  const badge = document.getElementById('lvlBadge');
+  badge.textContent = LVL_N[q.level];
+  badge.className = 'lvl-badge ' + LVL_C[q.level];
+
+  document.getElementById('qText').textContent = q.q;
+  document.getElementById('feedback').textContent = '';
+  document.getElementById('feedback').className = 'feedback';
+  document.getElementById('btnNext').style.display = 'none';
+
+  const grid = document.getElementById('optsGrid');
+  grid.innerHTML = '';
+  q.o.forEach((opt,oi) => {
+    const btn = document.createElement('button');
+    btn.className='opt'; btn.id='o'+oi;
+    btn.innerHTML=`<span class="opt-l">${'ABCD'[oi]}</span>${opt}`;
+    btn.onclick=()=>pick(oi);
+    grid.appendChild(btn);
+  });
+
+  qStart = Date.now();
+}
+
+async function pick(idx) {
+  if (answered) return;
+  answered = true;
+
+  const elapsed = (Date.now()-qStart)/1000;
+  const q = qList[qIdx];
+  const correct = idx===q.a;
+  let pts = correct ? calcPts(q.level, elapsed) : 0;
+  if (correct) myScore += pts;
+
+  document.querySelectorAll('.opt').forEach(b=>b.disabled=true);
+  document.getElementById('o'+idx).classList.add(correct?'c-ok':'c-no');
+  if (!correct) document.getElementById('o'+q.a).classList.add('c-reveal');
+
+  const fb = document.getElementById('feedback');
+  if (correct) {
+    const spd = elapsed<5?'🔥 Super cepat!':elapsed<10?'⚡ Cepat!':elapsed<20?'👍 Bagus!':'✅ Benar!';
+    fb.textContent = `+${pts} poin · ${elapsed.toFixed(1)}s · ${spd}`;
+    fb.className = 'feedback fb-ok';
+  } else {
+    fb.textContent = `Jawaban salah. Benar: ${q.o[q.a]}`;
+    fb.className = 'feedback fb-no';
+  }
+
+  // Tower & lava
+  if (correct) { addTowerBlock(); }
+  lavaHeightPx += LAVA_RISE;
+  updateLavaVisual(lavaHeightPx);
+  checkDanger();
+
+  myAnswers.push({
+    qn:qIdx+1, q:q.q, level:q.level,
+    correct, myAns:q.o[idx], correctAns:q.o[q.a],
+    pts, elapsed:Math.round(elapsed*10)/10
+  });
+
+  // Push to Firebase
+  const correct_count = myAnswers.filter(a=>a.correct).length;
+  const wrong_count   = myAnswers.filter(a=>!a.correct).length;
+  await update(ref(db, `rooms/${roomCode}/players/${myId}`), {
+    score:   myScore,
+    correct: correct_count,
+    wrong:   wrong_count,
+    blocks:  towerBlocks,
+    qIdx:    qIdx+1,
+  });
+
+  showToast(correct?'✅':'❌', correct?`+${pts} poin!`:'Salah!', correct);
+  document.getElementById('btnNext').style.display = 'block';
+}
+
+window.nextQuestion = () => { qIdx++; loadQ(); };
+
+async function markFinished() {
+  const times = myAnswers.filter(a=>a.correct).map(a=>a.elapsed);
+  const avg   = times.length ? (times.reduce((s,v)=>s+v,0)/times.length).toFixed(1) : '-';
+
+  await update(ref(db, `rooms/${roomCode}/players/${myId}`), {
+    score:    myScore,
+    correct:  myAnswers.filter(a=>a.correct).length,
+    wrong:    myAnswers.filter(a=>!a.correct).length,
+    blocks:   towerBlocks,
+    qIdx:     qList.length,
+    finished: true,
+    avgTime:  avg,
+    // store detail for export
+    detail:   JSON.stringify(myAnswers),
+  });
+  // also save to shared export store
+  saveToExportStore(avg);
+}
+
+/* ═══════ TOWER/LAVA VISUALS ═══════ */
+function addTowerBlock() {
+  const shaft = document.getElementById('towerShaft');
+  const b = document.createElement('div');
+  b.className = 't-block';
+  b.style.background = BLOCK_COLS[Math.min(towerBlocks, BLOCK_COLS.length-1)];
+  shaft.appendChild(b);
+  towerBlocks++;
+  updatePlayerPos();
+}
+
+function updatePlayerPos() {
+  const sprite = document.getElementById('playerSprite');
+  const skyH   = document.getElementById('towerSky').offsetHeight;
+  const topPx  = towerBlocks * 13;
+  sprite.style.bottom = Math.min(topPx+2, skyH-36)+'px';
+}
+
+function updateLavaVisual(totalH) {
+  const layer = document.getElementById('lavaLayer');
+  const body  = document.getElementById('lavaBody');
+  layer.style.height = totalH+'px';
+  body.style.height  = Math.max(0, totalH-11)+'px';
+}
+
+function checkDanger() {
+  const sprite   = document.getElementById('playerSprite');
+  const spriteBot= parseInt(sprite.style.bottom||'0');
+  const col      = document.getElementById('towerCol');
+  col.classList.toggle('danger', lavaHeightPx >= spriteBot-20);
+}
+
+/* ═══════ LIVE LEADERBOARD ═══════ */
+function renderLiveLeaderboard(players) {
+  const arr = Object.values(players).sort((a,b)=>b.score-a.score);
+  const list = document.getElementById('lbList');
+  list.innerHTML = arr.map((p,i) => `
+    <div class="lb-entry ${p.id===myId?'me-entry':''}">
+      <div class="lb-rank">${i+1}</div>
+      <div class="lb-av">${p.char}</div>
+      <div class="lb-info">
+        <div class="lb-nm">${p.name}</div>
+        <div class="lb-sc">${(p.score||0).toLocaleString()}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+/* ═══════ END GAME ═══════ */
+function endGame(players) {
+  dbOff();
+  setScreen('resultScreen');
+
+  const correct = myAnswers.filter(a=>a.correct).length;
+  const wrong   = myAnswers.filter(a=>!a.correct).length;
+  const times   = myAnswers.filter(a=>a.correct).map(a=>a.elapsed);
+  const avg     = times.length?(times.reduce((s,v)=>s+v,0)/times.length).toFixed(1):'-';
+  const pct     = myAnswers.length ? Math.round(correct/myAnswers.length*100) : 0;
+
+  document.getElementById('resFinal').textContent = myScore.toLocaleString();
+  document.getElementById('resSub').textContent   = `${CHARS[myChar]} ${myName}`;
+  document.getElementById('stOk').textContent  = correct;
+  document.getElementById('stNo').textContent  = wrong;
+  document.getElementById('stAvg').textContent = avg+(avg==='-'?'':'s');
+
+  const titles=['📚 Ayo Tingkatkan!','💪 Terus Berlatih!','🎯 Bagus!','🏆 Luar Biasa!'];
+  document.getElementById('resTitle').textContent = pct>=80?titles[3]:pct>=60?titles[2]:pct>=40?titles[1]:titles[0];
+  document.getElementById('resIco').textContent   = pct>=80?'🏆':pct>=60?'🎯':pct>=40?'💪':'📚';
+
+  setTimeout(()=>{ document.getElementById('pctFill').style.width=pct+'%'; }, 300);
+
+  // Final leaderboard
+  const arr = Object.values(players).sort((a,b)=>b.score-a.score);
+  const medals = ['🥇','🥈','🥉'];
+  const lb = document.getElementById('finalLb');
+  lb.innerHTML = `<div class="flb-title">🏆 Papan Peringkat Akhir</div>` +
+    arr.map((p,i) => `
+      <div class="flb-row ${p.id===myId?'me-row':''}">
+        <div class="flb-pos">${medals[i]||'#'+(i+1)}</div>
+        <div class="flb-av">${p.char}</div>
+        <div class="flb-info">
+          <div class="flb-name">${p.name}${p.id===myId?' (Kamu)':''}</div>
+          <div class="flb-stats">✅${p.correct||0} ❌${p.wrong||0} · 🏰${p.blocks||0} blok</div>
+        </div>
+        <div class="flb-score">${(p.score||0).toLocaleString()}</div>
+      </div>
+    `).join('');
+
+  // Review
+  const revList = document.getElementById('revList');
+  revList.innerHTML = myAnswers.map(a=>`
+    <div class="rev-item ${a.correct?'ri-ok':'ri-w'}">
+      <div class="rev-n">${a.qn}</div>
+      <div style="flex:1;min-width:0;">
+        <div class="rev-q">${a.q}</div>
+        <div class="rev-a">
+          ${a.correct?`<strong>✅ ${a.correctAns}</strong>`:`<span class="ma">❌ ${a.myAns}</span> · <strong>✅ ${a.correctAns}</strong>`}
+          <span style="color:var(--muted);margin-left:.3rem;">${a.elapsed}s</span>
+        </div>
+      </div>
+      <div class="rev-p">${a.pts>0?'+'+a.pts:'0'}</div>
+    </div>
+  `).join('');
+
+  if (pct>=80) launchConfetti();
+
+  // store final players snapshot for export
+  window._finalPlayers = players;
+}
+
+/* ═══════ EXPORT — SEMUA PEMAIN ═══════ */
+const EXPORT_KEY = 'mtr_export_v2';
+
+function saveToExportStore(avgTime) {
+  const now = new Date();
+  const lvlLabel={0:'Semua Level',1:'Easy',2:'Medium',3:'Hard'};
+  const entry = {
+    ts:       now.toISOString(),
+    tanggal:  now.toLocaleDateString('id-ID',{day:'2-digit',month:'2-digit',year:'numeric'}),
+    waktu:    now.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}),
+    room:     roomCode,
+    nama:     myName,
+    avatar:   CHARS[myChar],
+    level:    lvlLabel[diffMode],
+    total:    myAnswers.length,
+    benar:    myAnswers.filter(a=>a.correct).length,
+    salah:    myAnswers.filter(a=>!a.correct).length,
+    skor:     myScore,
+    akurasi:  myAnswers.length?Math.round(myAnswers.filter(a=>a.correct).length/myAnswers.length*100):0,
+    rataWaktu:avgTime,
+    cepat5:   myAnswers.filter(a=>a.correct&&a.elapsed<5).length,
+    cepat10:  myAnswers.filter(a=>a.correct&&a.elapsed>=5&&a.elapsed<10).length,
+    lambat:   myAnswers.filter(a=>a.correct&&a.elapsed>=10).length,
+    akEasy:   pctLvl(1), skEasy: scoreLvl(1),
+    akMed:    pctLvl(2), skMed:  scoreLvl(2),
+    akHard:   pctLvl(3), skHard: scoreLvl(3),
+    detail:   JSON.stringify(myAnswers.map(a=>({no:a.qn,level:a.level,q:a.q,jawaban:a.myAns,benar:a.correctAns,status:a.correct?'BENAR':'SALAH',poin:a.pts,waktu:a.elapsed})))
+  };
+  let all=[];
+  try{all=JSON.parse(localStorage.getItem(EXPORT_KEY)||'[]');}catch(e){}
+  all.push(entry);
+  localStorage.setItem(EXPORT_KEY, JSON.stringify(all));
+}
+
+function pctLvl(lvl){const la=myAnswers.filter(a=>a.level===lvl);return la.length?Math.round(la.filter(a=>a.correct).length/la.length*100)+'%':'-';}
+function scoreLvl(lvl){const la=myAnswers.filter(a=>a.level===lvl);return la.length?la.reduce((s,a)=>s+a.pts,0):'-';}
+
+window.exportExcel = () => {
+  let all=[];
+  try{all=JSON.parse(localStorage.getItem(EXPORT_KEY)||'[]');}catch(e){}
+  if(!all.length){alert('Belum ada data hasil.');return;}
+
+  const rows=[];
+  rows.push(['REKAP HASIL MATH TOWER RACE — Quantitative Reasoning Multiplayer']);
+  rows.push(['Diekspor pada:', new Date().toLocaleString('id-ID')]);
+  rows.push(['Total Data Tersimpan:', all.length, 'peserta/sesi']);
+  rows.push([]);
+
+  rows.push(['=== RINGKASAN SEMUA PESERTA ===']);
+  rows.push(['No','Nama','Room','Tanggal','Waktu','Mode Level',
+    'Total Soal','Benar','Salah','Skor Total','Akurasi (%)',
+    'Rata-rata Waktu Benar (s)','Respons <5s','Respons 5-10s','Respons >10s',
+    'Akurasi Easy','Skor Easy','Akurasi Medium','Skor Medium','Akurasi Hard','Skor Hard']);
+  all.forEach((e,i)=>{
+    rows.push([i+1,e.nama,e.room,e.tanggal,e.waktu,e.level,
+      e.total,e.benar,e.salah,e.skor,e.akurasi,e.rataWaktu,
+      e.cepat5,e.cepat10,e.lambat,
+      e.akEasy,e.skEasy,e.akMed,e.skMed,e.akHard,e.skHard]);
+  });
+  rows.push([]);
+
+  rows.push(['=== DETAIL JAWABAN PER PESERTA ===']);
+  all.forEach((e,i)=>{
+    rows.push([]);
+    rows.push([`Peserta ${i+1}: ${e.nama}`,`Room: ${e.room}`,`${e.tanggal} ${e.waktu}`,`Level: ${e.level}`,`Skor: ${e.skor}`,`Akurasi: ${e.akurasi}%`]);
+    rows.push(['No. Soal','Level','Pertanyaan','Jawaban Peserta','Jawaban Benar','Status','Poin','Waktu (s)']);
+    try{
+      JSON.parse(e.detail).forEach(d=>{
+        rows.push([d.no,{1:'Easy',2:'Medium',3:'Hard'}[d.level]||d.level,d.q,d.jawaban,d.benar,d.status,d.poin,d.waktu]);
+      });
+    }catch{rows.push(['(data tidak tersedia)']);}
+  });
+  rows.push([]);
+
+  rows.push(['=== SKALA PSIKOLOGIS — PENGUKURAN QUANTITATIVE REASONING (AGREGAT) ===']);
+  rows.push(['Metrik','Rata-rata','Min','Max','Keterangan']);
+  const agg=(key)=>{const v=all.map(e=>+e[key]).filter(v=>!isNaN(v));return v.length?[(v.reduce((s,x)=>s+x,0)/v.length).toFixed(2),Math.min(...v),Math.max(...v)]:['−','−','−'];};
+  [
+    ['skor','Skor Total','Poin akumulatif berbasis kecepatan'],
+    ['akurasi','Akurasi Keseluruhan (%)','% jawaban benar'],
+    ['cepat5','Respons <5 detik','Indikator fluency & automatisasi'],
+    ['cepat10','Respons 5-10 detik','Kecepatan sedang'],
+    ['lambat','Respons >10 detik','Masih perlu penguatan'],
+  ].forEach(([k,lbl,ket])=>{
+    const [avg,mn,mx]=agg(k);
+    rows.push([lbl,avg,mn,mx,ket]);
+  });
+
+  const csv=rows.map(r=>r.map(c=>{const s=String(c==null?'':c).replace(/"/g,'""');return/[,"\n\r]/.test(s)?`"${s}"`:s;}).join(',')).join('\r\n');
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=`MathTowerRace_Rekap_${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(a);a.click();
+  setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);},200);
+};
+
+/* ═══════ TOAST ═══════ */
+let toastT=null;
+function showToast(em,tx,win){
+  const t=document.getElementById('toast');
+  document.getElementById('tEm').textContent=em;
+  document.getElementById('tTx').textContent=tx;
+  t.className='toast show '+(win?'tw':'tl');
+  clearTimeout(toastT);
+  toastT=setTimeout(()=>t.classList.remove('show'),1500);
+}
+window.showToast=showToast;
+
+/* ═══════ CONFETTI ═══════ */
+function launchConfetti(){
+  const cols=['#FFD700','#FF6600','#FF4500','#22c55e','#9f7aea','#FF6584'];
+  for(let i=0;i<60;i++){
+    const el=document.createElement('div');el.className='cf';
+    el.style.cssText=`left:${Math.random()*100}%;top:-10px;background:${cols[Math.floor(Math.random()*cols.length)]};animation-duration:${1+Math.random()*1.5}s;animation-delay:${Math.random()*.7}s;width:${5+Math.random()*8}px;height:${5+Math.random()*8}px;`;
+    document.body.appendChild(el);setTimeout(()=>el.remove(),3000);
+  }
+}
+
+</script>
+</body>
+</html>
